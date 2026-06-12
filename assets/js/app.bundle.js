@@ -173,37 +173,19 @@ function ensureDefaultAdmin() {
     });
     localStorage.setItem('sg_users', JSON.stringify(users));
 }
-async function loginUser(e) {
+function loginUser(e) {
     e.preventDefault();
     var username = document.getElementById('login-username').value.trim();
     var password = document.getElementById('login-password').value;
     var errEl = document.getElementById('login-error');
 
-    // 统一走 users 数组验证，无硬编码后门
-    try {
-        ensureDefaultAdmin();
+    // 确保默认管理员存在
+    ensureDefaultAdmin();
 
-        // 先尝试直接密码匹配（兼容旧明文数据），否则用哈希比较
-        var user = users.find(function(u) {
-            return u.username === username && u.password === password && u.status === 'active';
-        });
-
-        // 直接匹配未命中时尝试哈希比对（新注册用户的密码为 hash 存储）
-        if (!user && username && password) {
-            var hash = await hashPassword(password);
-            user = users.find(function(u) {
-                return u.username === username && (u.password === hash || u.password === password) && u.status === 'active';
-            });
-            // 哈希匹配但旧存储为明文时，自动升级为哈希
-            if (user && user.password !== hash) {
-                user.password = hash;
-                localStorage.setItem('sg_users', JSON.stringify(users));
-            }
-        }
-    } catch(ex) {
-        console.error('[登录] 验证异常', ex);
-        var user = null;
-    }
+    // 走 users 数组验证（无硬编码后门）
+    var user = users.find(function(u) {
+        return u.username === username && u.password === password && u.status === 'active';
+    });
 
     if (!user) {
         if (errEl) { errEl.innerText = '账号、密码错误，或该账号已停用。'; errEl.classList.remove('hidden'); }
