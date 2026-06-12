@@ -42,6 +42,45 @@ const ROLE_PERMISSIONS = {
     viewer: ['report_view']
 };
 const DISCOUNT_OPTIONS = [1.0, 0.95, 0.90, 0.85, 0.80, 0.75, 0.70, 0.60, 0.50, 0];
+
+
+// ============================================================
+// 1b. 安全与工具函数
+// ============================================================
+// HTML 转义 —— 所有 innerHTML 插值处应使用此函数包裹，防止 XSS
+function escapeHtml(str) {
+    if (typeof str !== "string") str = String(str || "");
+    var div = document.createElement("div");
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+}
+
+// 模板渲染函数 —— 自动对插值做 HTML 转义
+function html(strings) {
+    var result = strings[0];
+    for (var i = 1; i < arguments.length; i++) {
+        result += escapeHtml(String(arguments[i])) + strings[i];
+    }
+    return result;
+}
+
+// 密码哈希 —— 基于 Web Crypto API 的 SHA-256
+async function hashPassword(pw) {
+    var buf = new TextEncoder().encode(pw);
+    var digest = await crypto.subtle.digest("SHA-256", buf);
+    return Array.from(new Uint8Array(digest)).map(function(b) { return b.toString(16).padStart(2, "0"); }).join("");
+}
+
+// 金额计算：分 -> 元 转换，避免浮点累积误差
+function toCents(val) { return Math.round((val || 0) * 100); }
+function fromCents(c) { return (c || 0) / 100; }
+
+// 购物车金额精确计算
+function calcSubtotal(price, qty, discount) {
+    var p = toCents(price);
+    var d = discount === 0 ? 0 : (discount || 1.0);
+    return fromCents(Math.round(p * qty * d));
+}
 function generateDiscountOptions(val) {
     return DISCOUNT_OPTIONS.map(d => '<option value="' + d + '"' + (Math.abs(d - val) < 0.001 ? ' selected' : '') + '>' + (d === 0 ? '赠送' : (d * 100) + '%') + '</option>').join('');
 }
@@ -86,18 +125,33 @@ async function syncFromCloud() {
             localStorage.setItem('sg_orders', JSON.stringify(orders));
             renderProductTable(); renderCartTable(); updateReportDashboard(); renderUserTable(); applyAuthUI();
         }
-    } catch (e) {}
+    } catch (e) {
+        console.error('[云同步] 拉取失败', e);
+        if (typeof window.v3Toast === 'function') {
+            window.v3Toast('从云端同步数据失败，请检查网络连接。', 'error');
+        }
+    }
 }
 async function pushToCloud() {
     if (!supabaseClient) return;
     try {
-        const payload = { sync_id: SY_ROOM_ID, products, orders, users, updated_at: new Date() };
-        const { error } = await supabaseClient.from('sync_store').upsert(payload);
+        // 同步前剥离密码字段，避免明文密码暴露到云端
+        var safeUsers = users.map(function(u) {
+            return Object.assign({}, u, { password: '' });
+        });
+        var payload = { sync_id: SY_ROOM_ID, products: products, orders: orders, users: safeUsers, updated_at: new Date() };
+        var { error } = await supabaseClient.from('sync_store').upsert(payload);
         if (error) {
-            await supabaseClient.from('sync_store').upsert({ sync_id: SY_ROOM_ID, products, orders, updated_at: new Date() });
+            await supabaseClient.from('sync_store').upsert({ sync_id: SY_ROOM_ID, products: products, orders: orders, updated_at: new Date() });
         }
-    } catch (e) {}
+    } catch (e) {
+        console.error('[云同步] 推送失败', e);
+        if (typeof window.v3Toast === 'function') {
+            window.v3Toast('数据同步到云端失败，本地数据未丢失。', 'error');
+        }
+    }
 }
+// ============================================================
 // ============================================================
 // 3. 用户认证与权限
 // ============================================================
@@ -110,50 +164,38 @@ function requirePermission(perm, msg) {
     alert(msg || '当前账号没有权限执行此操作。');
     return false;
 }
+function ensureDefaultAdmin() {
+    if (users.some(function(u) { return u.id === 'U-ADMIN'; })) return;
+    users.push({
+        id: 'U-ADMIN', username: 'admin', password: 'admin123',
+        displayName: '系统管理员', role: 'admin',
+        status: 'active', createdAt: new Date().toISOString(), lastLogin: ''
+    });
+    localStorage.setItem('sg_users', JSON.stringify(users));
+}
 function loginUser(e) {
     e.preventDefault();
-    const username = document.getElementById('login-username').value.trim();
-    const password = document.getElementById('login-password').value;
-    const err = document.getElementById('login-error');
+    var username = document.getElementById('login-username').value.trim();
+    var password = document.getElementById('login-password').value;
+    var errEl = document.getElementById('login-error');
 
-    // 硬编码默认管理员登录（绕过 users 数组，确保始终可用）
-    if (username === 'admin' && password === 'admin123') {
-        try {
-            if (!Array.isArray(users)) { users = []; }
-            var adminUser = users.find(function(u) { return u.id === 'U-ADMIN'; });
-            if (!adminUser) {
-                users.push({
-                    id: 'U-ADMIN', username: 'admin', password: 'admin123',
-                    displayName: '系统管理员', role: 'admin',
-                    status: 'active', createdAt: new Date().toISOString(), lastLogin: ''
-                });
-                adminUser = users[users.length - 1];
-            }
-            adminUser.lastLogin = new Date().toLocaleString();
-            localStorage.setItem('sg_users', JSON.stringify(users));
-            currentUser = { id: adminUser.id, username: adminUser.username, displayName: adminUser.displayName, role: adminUser.role };
-            localStorage.setItem('sg_current_user', JSON.stringify(currentUser));
-            if (err) err.classList.add('hidden');
-            if (typeof applyAuthUI === 'function') applyAuthUI();
-            if (typeof renderUserTable === 'function') renderUserTable();
-            if (typeof addAudit === 'function') addAudit('登录系统', currentUser.username, '用户登录');
-            if (typeof pushToCloud === 'function') pushToCloud();
-        } catch(ex) {}
-        return;
-    }
+    // 确保默认管理员存在
+    ensureDefaultAdmin();
 
-    // 普通用户登录流程
-    const user = users.find(u => u.username === username && u.password === password && u.status === 'active');
-    const err2 = document.getElementById('login-error');
+    // 走 users 数组验证（无硬编码后门）
+    var user = users.find(function(u) {
+        return u.username === username && u.password === password && u.status === 'active';
+    });
+
     if (!user) {
-        if (err2) { err2.innerText = '账号、密码错误，或该账号已停用。'; err2.classList.remove('hidden'); }
+        if (errEl) { errEl.innerText = '账号、密码错误，或该账号已停用。'; errEl.classList.remove('hidden'); }
         return;
     }
     user.lastLogin = new Date().toLocaleString();
     localStorage.setItem('sg_users', JSON.stringify(users));
     currentUser = { id: user.id, username: user.username, displayName: user.displayName, role: user.role };
     localStorage.setItem('sg_current_user', JSON.stringify(currentUser));
-    err.classList.add('hidden');
+    if (errEl) errEl.classList.add('hidden');
     applyAuthUI();
     renderUserTable();
     addAudit('登录系统', currentUser.username, '用户登录');
@@ -1030,8 +1072,15 @@ function resetSystemData() {
 (function() {
     var scannerBuffer = "";
     var lastKeyTime = 0;
+    // 输入框聚焦时清空缓冲区，防止扫码枪数据与键盘输入混合
+    document.addEventListener('focusin', function() {
+        scannerBuffer = "";
+    });
     document.addEventListener('keydown', function(e) {
-        if (e.target && ['INPUT', 'TEXTAREA', 'SELECT'].indexOf(e.target.tagName) !== -1) return;
+        if (e.target && ['INPUT', 'TEXTAREA', 'SELECT'].indexOf(e.target.tagName) !== -1) {
+            scannerBuffer = "";
+            return;
+        }
         var now = Date.now();
         if (e.key === 'Enter' && scannerBuffer.length > 4) {
             var code = scannerBuffer;
@@ -1265,20 +1314,13 @@ bar.innerHTML = '<div class="flex-1 min-w-0"><div class="text-[10px] text-slate-
 // ============================================================
 // 16. 初始化
 // ============================================================
-window.onload = async function() {
+document.addEventListener('DOMContentLoaded', async function initApp() {
     // 立即清理登录缓存，确保每次刷新都显示登录弹窗
     currentUser = null;
     localStorage.removeItem('sg_current_user');
     applyAuthUI();
-    // 确保默认管理员始终存在（在云同步之前执行）
-    if (!users.some(function(u) { return u.id === 'U-ADMIN' || u.username === 'admin'; })) {
-        users.push({
-            id: 'U-ADMIN', username: 'admin', password: 'admin123',
-            displayName: '系统管理员', role: 'admin',
-            status: 'active', createdAt: new Date().toISOString(), lastLogin: ''
-        });
-        localStorage.setItem('sg_users', JSON.stringify(users));
-    }
+    // 确保默认管理员始终存在
+    ensureDefaultAdmin();
     renderProductTable();
     renderCartTable();
     initChart();
@@ -1286,13 +1328,13 @@ window.onload = async function() {
     renderUserTable();
     renderAuditTable();
     if (supabaseClient) {
-        await syncFromCloud();
+        try { await syncFromCloud(); } catch(e) { console.error('[初始化] 云同步失败', e); }
     }
     // 更新下拉选项
     loadPaymentSettings();
     var sel = document.getElementById('mock-scanner-dropdown');
     if (sel) {
         sel.innerHTML = '<option value="">选择商品</option>'
-            + products.map(function(p) { return '<option value="' + p.id + '">' + p.name + ' (¥' + p.price.toFixed(2) + ')</option>'; }).join('');
+            + products.map(function(p) { return '<option value="' + p.id + '">' + escapeHtml(p.name) + ' (¥' + p.price.toFixed(2) + ')</option>'; }).join('');
     }
-};
+});
