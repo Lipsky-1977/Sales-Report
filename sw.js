@@ -1,4 +1,4 @@
-const APP_VERSION = '3.2.0-rebuilt';
+const APP_VERSION = '3.2.1';
 const CACHE_NAME = `second-gravity-sales-v${APP_VERSION}`;
 const CORE_ASSETS = [
   './',
@@ -39,29 +39,25 @@ self.addEventListener('fetch', event => {
     event.respondWith(networkFirst(event.request, './index.html'));
     return;
   }
-
-  event.respondWith(cacheFirst(event.request, sameOrigin));
+  if (sameOrigin) {
+    event.respondWith(networkFirst(event.request));
+    return;
+  }
 });
 
-async function networkFirst(request, fallbackUrl) {
+async function networkFirst(request, fallback) {
   try {
     const response = await fetch(request);
-    const cache = await caches.open(CACHE_NAME);
-    cache.put(request, response.clone()).catch(() => {});
-    return response;
-  } catch (error) {
+    if (response.ok) {
+      const clone = response.clone();
+      caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
+      return response;
+    }
+    throw new Error('Response not OK');
+  } catch (e) {
     const cached = await caches.match(request);
-    return cached || caches.match(fallbackUrl);
+    if (cached) return cached;
+    if (fallback) return caches.match(fallback);
+    return new Response('Offline', { status: 503 });
   }
-}
-
-async function cacheFirst(request, shouldPersist) {
-  const cached = await caches.match(request);
-  if (cached) return cached;
-  const response = await fetch(request);
-  if (shouldPersist && response.ok) {
-    const cache = await caches.open(CACHE_NAME);
-    cache.put(request, response.clone()).catch(() => {});
-  }
-  return response;
 }

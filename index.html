@@ -1,10 +1,9 @@
 <!DOCTYPE html>
-
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>第二引力销售系统 V3 - 重建精简版</title>
+<title>第二引力销售系统 V3</title>
 <link href="manifest.webmanifest" rel="manifest"/>
 <meta content="#111111" name="theme-color"/>
 <meta content="yes" name="mobile-web-app-capable"/>
@@ -20,724 +19,332 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <style>
-        /* 强制让手机摄像头视频流完美填满取景框，避免产生黑边 */
-        #reader video {
-            width: 100% !important;
-            height: 100% !important;
-            object-fit: cover !important;
-        }
-
-        /* 🍎 复刻苹果原生相机的黄色手动对焦框动画 */
-        .apple-focus-ring {
-            position: absolute;
-            border: 1.5px solid #eab308; /* yellow-500 */
-            width: 65px;
-            height: 65px;
-            pointer-events: none;
-            transform: translate(-50%, -50%) scale(1.4);
-            opacity: 0;
-            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.15s ease;
-            z-index: 30;
-            box-shadow: 0 0 4px rgba(0,0,0,0.5);
-        }
-        .apple-focus-ring::before {
-            content: '';
-            position: absolute;
-            inset: -1px;
-            border: 3px solid #eab308;
-            border-color: #eab308 transparent transparent #eab308;
-            width: 8px;
-            height: 8px;
-        }
-        .apple-focus-ring.active {
-            transform: translate(-50%, -50%) scale(1);
-            opacity: 1;
-        }
-
-
-        /* 个性化灰度 + 橙色主题：高对比、低眩光、统一交互反馈 */
-        :root {
-            --bg-main: #111111;
-            --bg-panel: #1c1c1f;
-            --bg-panel-soft: #262629;
-            --bg-input: #0f0f10;
-            --border-soft: #3f3f46;
-            --border-strong: #52525b;
-            --text-main: #f5f5f4;
-            --text-muted: #d4d4d8;
-            --text-subtle: #a1a1aa;
-            --orange: #f97316;
-            --orange-hover: #ea580c;
-            --orange-soft: rgba(249,115,22,.16);
-            --orange-ring: rgba(251,146,60,.42);
-            --danger: #dc2626;
-        }
-        body {
-            background:
-                radial-gradient(circle at top left, rgba(249,115,22,.10), transparent 30rem),
-                linear-gradient(135deg, #0b0b0c 0%, var(--bg-main) 44%, #18181b 100%) !important;
-            color: var(--text-main) !important;
-        }
-        header {
-            background: rgba(24,24,27,.94) !important;
-            border-color: var(--border-soft) !important;
-            backdrop-filter: blur(12px);
-            box-shadow: 0 14px 40px rgba(0,0,0,.22);
-        }
-        .bg-slate-800, .bg-slate-900, .bg-slate-950\/40, .bg-slate-900\/30 {
-            background-color: var(--bg-panel) !important;
-        }
-        .bg-slate-900 { background-color: var(--bg-input) !important; }
-        .border-slate-700, .border-slate-600 { border-color: var(--border-soft) !important; }
-        .text-slate-100, .text-white { color: var(--text-main) !important; }
-        .text-slate-300, .text-slate-400 { color: var(--text-muted) !important; }
-        .text-slate-500, .text-slate-600 { color: var(--text-subtle) !important; }
-        h1, h2, .text-orange-300, .text-orange-400 { color: #fdba74 !important; }
-        input, select, textarea {
-            background-color: var(--bg-input) !important;
-            border-color: var(--border-soft) !important;
-            color: var(--text-main) !important;
-            caret-color: var(--orange);
-        }
-        input::placeholder, textarea::placeholder { color: #a1a1aa !important; opacity: 1; }
-        input:focus, select:focus, textarea:focus {
-            border-color: var(--orange) !important;
-            box-shadow: 0 0 0 3px var(--orange-ring) !important;
-            outline: none !important;
-        }
-        button {
-            outline-offset: 2px;
-        }
-        button:focus-visible, a:focus-visible {
-            outline: 3px solid var(--orange-ring) !important;
-            outline-offset: 2px;
-        }
-        .bg-orange-500, .bg-orange-600,
-        button[class*="bg-orange-500"], button[class*="bg-orange-600"] {
-            color: #111111 !important;
-            background-color: var(--orange) !important;
-            border-color: var(--orange) !important;
-            box-shadow: 0 10px 25px rgba(249,115,22,.16) !important;
-        }
-        .hover\:bg-orange-600:hover,
-        .hover\:bg-orange-500:hover,
-        button[class*="hover:bg-orange"]:hover {
-            background-color: var(--orange-hover) !important;
-            color: #111111 !important;
-        }
-        .bg-slate-700, button[class*="bg-slate-700"] {
-            background-color: var(--bg-panel-soft) !important;
-            color: var(--text-main) !important;
-            border: 1px solid var(--border-soft);
-        }
-        .hover\:bg-slate-600:hover, button[class*="hover:bg-slate-600"]:hover {
-            background-color: #343438 !important;
-            border-color: var(--orange) !important;
-            color: #fed7aa !important;
-        }
-        table thead tr {
-            background-color: #151517 !important;
-            color: var(--text-muted) !important;
-        }
-        table tbody tr {
-            border-color: #343438 !important;
-        }
-        table tbody tr:hover {
-            background-color: var(--orange-soft) !important;
-        }
-        #nav-tabs button {
-            border: 1px solid var(--border-soft);
-        }
-        #nav-tabs button.bg-orange-600,
-        #nav-tabs button[class*="bg-orange-600"] {
-            background: linear-gradient(135deg, #f97316, #fb923c) !important;
-            color: #111111 !important;
-            border-color: #fb923c !important;
-        }
-        #current-user-badge {
-            background-color: #111113 !important;
-            border-color: var(--border-soft) !important;
-            color: var(--text-muted) !important;
-        }
-        .bg-red-950 { background-color: #3b1111 !important; }
-        .text-red-400 { color: #fca5a5 !important; }
-        .border-red-900 { border-color: #7f1d1d !important; }
-        .bg-amber-950 { background-color: #3a2508 !important; }
-        .text-amber-400, .text-amber-500 { color: #fbbf24 !important; }
-        .bg-white { background-color: #fff7ed !important; }
-        #qr-prod-id, .text-slate-900 { color: #111111 !important; }
-        .shadow-xl { box-shadow: 0 18px 45px rgba(0,0,0,.22) !important; }
-        .rounded-xl { border-radius: 1rem !important; }
-
-
-        /* 手机收银 App 体验优化：PWA、底部结算栏、卡片购物车、手势操作 */
-        .pwa-safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
-        #mobile-checkout-bar {
-            position: fixed; left: 0; right: 0; bottom: 0; z-index: 80;
-            display: none; padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
-            background: rgba(17,17,17,.96); border-top: 1px solid var(--border-soft);
-            box-shadow: 0 -16px 40px rgba(0,0,0,.35); backdrop-filter: blur(14px);
-        }
-        .mobile-cart-card { touch-action: pan-y; transition: transform .18s ease, background .18s ease; }
-        .mobile-cart-card.swiping { background: rgba(220,38,38,.16) !important; }
-        .mobile-cart-card .swipe-hint { display: none; }
-        .mobile-install-btn {
-            position: fixed; right: 14px; bottom: calc(76px + env(safe-area-inset-bottom)); z-index: 75;
-            display: none; align-items: center; gap: 6px;
-            background: var(--orange); color: #111 !important; border: 1px solid var(--orange-hover);
-            border-radius: 999px; padding: 8px 12px; font-weight: 800; font-size: 11px;
-            box-shadow: 0 12px 28px rgba(249,115,22,.22);
-        }
-        #network-status-badge {
-            position: fixed; left: 12px; bottom: calc(82px + env(safe-area-inset-bottom)); z-index: 75;
-            border-radius: 999px; padding: 6px 10px; font-size: 10px; font-weight: 800;
-            border: 1px solid var(--border-soft); background: rgba(28,28,31,.94); color: var(--text-muted);
-            box-shadow: 0 10px 24px rgba(0,0,0,.24);
-        }
-        @media (max-width: 768px) {
-            body { padding-bottom: 92px; }
-            header { position: sticky; top: 0; z-index: 60; }
-            main { padding: 12px !important; }
-            #sales-tab .grid { display: flex !important; flex-direction: column-reverse; gap: 12px !important; }
-            #sales-tab table thead { display: none; }
-            #sales-tab table, #sales-tab tbody, #sales-tab tr, #sales-tab td { display: block; width: 100%; }
-            #sales-tab tr { margin-bottom: 10px; border: 1px solid var(--border-soft); border-radius: 14px; overflow: hidden; background: var(--bg-panel-soft); }
-            #sales-tab td { padding: 8px 10px !important; border: 0 !important; }
-            #interactive-reader-container { max-height: 58vh; }
-            #mobile-checkout-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-            .mobile-install-btn { display: inline-flex; }
-            .desktop-cart-total { display: none !important; }
-            .mobile-cart-card .swipe-hint { display: inline; color: #fca5a5; font-size: 10px; }
-            input[type=number] { min-height: 34px; }
-        }
-
-
-        /* 手机竖屏精简优化 v12 */
-        .mobile-only { display:none; }
-        @media (max-width: 640px) {
-            body { font-size: 13px; }
-            header .max-w-7xl { padding: 8px 10px !important; gap: 8px !important; }
-            header img { height: 52px !important; }
-            #nav-tabs { width: 100%; display: grid !important; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; overflow: visible !important; }
-            #nav-tabs button { padding: 9px 6px !important; justify-content: center; font-size: 12px; }
-            #nav-tabs i { margin-right: 2px !important; }
-            #btn-logout, button[onclick="shareAppSystem()"] { padding: 8px 10px !important; }
-            main { padding: 12px 10px 92px !important; }
-            .bg-slate-800 { border-radius: 14px; }
-            #sales-tab .grid { gap: 10px !important; }
-            #sales-tab .p-5, #product-tab .p-5, #report-tab .p-5, #user-tab .p-5 { padding: 12px !important; }
-            #sales-tab h2 { font-size: 14px !important; }
-            #sales-tab table { min-width: 0 !important; }
-            #sales-tab .overflow-x-auto { overflow-x: visible !important; }
-            #interactive-reader-container { max-height: 42vh; aspect-ratio: 1 / 0.82; }
-            #scanner-gun-panel { padding: 10px !important; }
-            #scanner-gun-input { min-width: 0; }
-            .mobile-compact-row { display:grid !important; grid-template-columns: 1fr auto; gap: 6px 8px; padding: 10px !important; }
-            .mobile-compact-row .cart-name { font-size: 13px; line-height: 1.25; }
-            .mobile-compact-row .cart-subtotal { font-size: 15px; }
-            .mobile-compact-row .cart-controls { grid-column: 1 / -1; display:flex; align-items:center; justify-content:space-between; gap:8px; }
-            .mobile-compact-row .cart-controls input { width: 54px !important; }
-            #cart-total-amount { font-size: 24px !important; }
-            .mobile-bottom-checkout { display:flex !important; position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; padding: 10px; background: rgba(15,23,42,.96); border-top: 1px solid var(--border-soft); backdrop-filter: blur(10px); gap: 10px; align-items:center; }
-            .desktop-checkout-card { display:none !important; }
-            #product-tab table, #ledger-table-body, #user-table-body, #audit-table-body { font-size: 11px; }
-            #product-tab th, #product-tab td, #report-tab th, #report-tab td, #user-tab th, #user-tab td { padding: 7px !important; }
-            .mobile-hide { display:none !important; }
-        }
-        @media (min-width: 641px) { .mobile-bottom-checkout { display:none !important; } }
-
-    </style>
+#reader video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+.apple-focus-ring { position: absolute; border: 1.5px solid #eab308; width: 65px; height: 65px; pointer-events: none; transform: translate(-50%, -50%) scale(1.4); opacity: 0; transition: transform 0.2s cubic-bezier(0.175,0.885,0.32,1.275), opacity 0.15s ease; z-index: 30; box-shadow: 0 0 4px rgba(0,0,0,0.5); }
+.apple-focus-ring::before { content: ''; position: absolute; inset: -1px; border: 3px solid #eab308; border-color: #eab308 transparent transparent #eab308; width: 8px; height: 8px; }
+.apple-focus-ring.active { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        :root { --bg-main: #0a0a0f; --bg-panel: #12121a; --bg-panel-soft: #1e1e2a; --bg-input: #0d0d14; --border-soft: #2a2a3a; --border-strong: #3a3a50; --text-main: #f5f5f5; --text-muted: #d4d4d8; --text-subtle: #a1a1aa; --accent: #a855f7; --accent-hover: #9333ea; --accent-soft: rgba(168,85,247,.16); --accent-ring: rgba(168,85,247,.42); --danger: #dc2626; }
+body { background: radial-gradient(circle at top left, rgba(168,85,247,.10), transparent 30rem), linear-gradient(135deg, #07070a 0%, #0d0d1a 44%, #150a24 100%) !important; color: var(--text-main) !important; }
+header { background: rgba(24,24,27,.94) !important; border-color: var(--border-soft) !important; backdrop-filter: blur(12px); box-shadow: 0 14px 40px rgba(0,0,0,.22); }
+.bg-slate-800, .bg-slate-900, .bg-slate-950\/40, .bg-slate-900\/30 { background-color: var(--bg-panel) !important; }
+.bg-slate-900 { background-color: var(--bg-input) !important; }
+.border-slate-700, .border-slate-600 { border-color: var(--border-soft) !important; }
+.text-slate-100, .text-white { color: var(--text-main) !important; }
+.text-slate-300, .text-slate-400 { color: var(--text-muted) !important; }
+.text-slate-500, .text-slate-600 { color: var(--text-subtle) !important; }
+h1, h2, .text-orange-300, .text-orange-400 { color: #c084fc !important; }
+input, select, textarea { background-color: var(--bg-input) !important; border-color: var(--border-soft) !important; color: var(--text-main) !important; caret-color: var(--accent); }
+input::placeholder, textarea::placeholder { color: #a1a1aa !important; opacity: 1; }
+input:focus, select:focus, textarea:focus { border-color: var(--accent) !important; box-shadow: 0 0 0 3px var(--accent-ring) !important; outline: none !important; }
+button { outline-offset: 2px; }
+button:focus-visible, a:focus-visible { outline: 3px solid var(--accent-ring) !important; outline-offset: 2px; }
+.bg-orange-500, .bg-orange-600, button[class*="bg-orange-500"], button[class*="bg-orange-600"] { color: #ffffff !important; background-color: var(--accent) !important; border-color: var(--accent) !important; box-shadow: 0 10px 25px rgba(168,85,247,.16) !important; }
+.hover\:bg-orange-600:hover, .hover\:bg-orange-500:hover, button[class*="hover:bg-orange"]:hover { background-color: var(--accent-hover) !important; color: #ffffff !important; }
+.bg-slate-700, button[class*="bg-slate-700"] { background-color: var(--bg-panel-soft) !important; color: var(--text-main) !important; border: 1px solid var(--border-soft); }
+.hover\:bg-slate-600:hover, button[class*="hover:bg-slate-600"]:hover { background-color: #343438 !important; border-color: var(--accent) !important; color: #d8b4fe !important; }
+table thead tr { background-color: #151517 !important; color: var(--text-muted) !important; }
+table tbody tr { border-color: #343438 !important; }
+table tbody tr:hover { background-color: var(--accent-soft) !important; }
+#nav-tabs button { border: 1px solid var(--border-soft); }
+#nav-tabs button.bg-orange-600, #nav-tabs button[class*="bg-orange-600"] { background: linear-gradient(135deg, #a855f7, #c084fc) !important; color: #ffffff !important; border-color: #c084fc !important; }
+#current-user-badge { background-color: #111113 !important; border-color: var(--border-soft) !important; color: var(--text-muted) !important; }
+.bg-red-950 { background-color: #3b1111 !important; }
+.text-red-400 { color: #fca5a5 !important; }
+.border-red-900 { border-color: #7f1d1d !important; }
+.bg-amber-950 { background-color: #2d0a45 !important; }
+.text-amber-400, .text-amber-500 { color: #c084fc !important; }
+.bg-orange-950 { background-color: #2d0a45 !important; }
+.hover\:bg-orange-900:hover { background-color: #3b0764 !important; }
+.text-orange-300 { color: #c084fc !important; }
+.text-orange-400 { color: #c084fc !important; }
+.text-cyan-300 { color: #d8b4fe !important; }
+.shadow-orange-500\/10 { box-shadow: 0 10px 15px -3px rgba(168,85,247,0.1), 0 4px 6px -4px rgba(168,85,247,0.1) !important; }
+.bg-white { background-color: #ffffff !important; }
+#qr-prod-id, .text-slate-900 { color: #111111 !important; }
+.shadow-xl { box-shadow: 0 18px 45px rgba(0,0,0,.22) !important; }
+.rounded-xl { border-radius: 1rem !important; }
+.pwa-safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+#mobile-checkout-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 80; display: none; padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); background: rgba(17,17,17,.96); border-top: 1px solid var(--border-soft); box-shadow: 0 -16px 40px rgba(0,0,0,.35); backdrop-filter: blur(14px); }
+.mobile-cart-card { touch-action: pan-y; transition: transform .18s ease, background .18s ease; }
+.mobile-install-btn { position: fixed; right: 14px; bottom: calc(76px + env(safe-area-inset-bottom)); z-index: 75; display: none; align-items: center; gap: 6px; background: var(--accent); color: #fff !important; border: 1px solid var(--accent-hover); border-radius: 999px; padding: 8px 12px; font-weight: 800; font-size: 11px; box-shadow: 0 12px 28px rgba(168,85,247,.22); }
+#network-status-badge { position: fixed; left: 12px; bottom: calc(82px + env(safe-area-inset-bottom)); z-index: 75; border-radius: 999px; padding: 6px 10px; font-size: 10px; font-weight: 800; border: 1px solid var(--border-soft); background: rgba(28,28,31,.94); color: var(--text-muted); box-shadow: 0 10px 24px rgba(0,0,0,.24); }
+@media (max-width: 768px) {
+    body { padding-bottom: 92px; }
+    header { position: sticky; top: 0; z-index: 60; }
+    main { padding: 12px !important; }
+    #sales-tab .grid { display: flex !important; flex-direction: column-reverse; gap: 12px !important; }
+    #sales-tab table thead { display: none; }
+    #sales-tab table, #sales-tab tbody, #sales-tab tr, #sales-tab td { display: block; width: 100%; }
+    #sales-tab tr { margin-bottom: 10px; border: 1px solid var(--border-soft); border-radius: 14px; overflow: hidden; background: var(--bg-panel-soft); }
+    #sales-tab td { padding: 8px 10px !important; border: 0 !important; }
+    #interactive-reader-container { max-height: 58vh; }
+    #mobile-checkout-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .mobile-install-btn { display: inline-flex; }
+    .desktop-cart-total { display: none !important; }
+    .mobile-cart-card .swipe-hint { display: inline; color: #fca5a5; font-size: 10px; }
+    input[type=number] { min-height: 34px; }
+}
+.mobile-only { display:none; }
+@media (max-width: 640px) {
+    body { font-size: 13px; }
+    header .max-w-7xl { padding: 8px 10px !important; gap: 8px !important; }
+    header img { height: 52px !important; }
+    #nav-tabs { width: 100%; display: grid !important; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; overflow: visible !important; }
+    #nav-tabs button { padding: 9px 6px !important; justify-content: center; font-size: 12px; }
+    #btn-logout, button[onclick="shareAppSystem()"] { padding: 8px 10px !important; }
+    main { padding: 12px 10px 92px !important; }
+    .bg-slate-800 { border-radius: 14px; }
+    #sales-tab .grid { gap: 10px !important; }
+    #sales-tab .p-5, #product-tab .p-5, #report-tab .p-5, #user-tab .p-5 { padding: 12px !important; }
+    #sales-tab h2 { font-size: 14px !important; }
+    #sales-tab table { min-width: 0 !important; }
+    #sales-tab .overflow-x-auto { overflow-x: visible !important; }
+    #interactive-reader-container { max-height: 42vh; aspect-ratio: 1 / 0.82; }
+    #scanner-gun-panel { padding: 10px !important; }
+    #scanner-gun-input { min-width: 0; }
+    .mobile-compact-row { display:grid !important; grid-template-columns: auto 1fr auto; gap: 6px 8px; padding: 10px !important; }
+    .mobile-compact-row td { width: auto !important; }
+    .mobile-compact-row .cart-name { grid-column: 1; font-size: 13px; line-height: 1.25; }
+    .mobile-compact-row .cart-price { display: none !important; }
+    .mobile-compact-row .cart-subtotal { grid-column: 2 / -1; font-size: 15px; justify-self: end; }
+    .mobile-compact-row .cart-discount { grid-column: 1; grid-row: 2; }
+    .mobile-compact-row .cart-qty { grid-column: 2; grid-row: 2; justify-self: center; }
+    .mobile-compact-row .cart-action { grid-column: 3; grid-row: 2; justify-self: end; }
+    .mobile-compact-row .cart-qty input { width: 54px !important; }
+    #cart-total-amount { font-size: 24px !important; }
+    .mobile-bottom-checkout { display:flex !important; position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; padding: 10px; background: rgba(15,23,42,.96); border-top: 1px solid var(--border-soft); backdrop-filter: blur(10px); gap: 10px; align-items:center; }
+</div>
+</div>
+</div>
+    .desktop-checkout-card { display:none !important; }
+    #product-tab table, #ledger-table-body, #user-table-body, #audit-table-body { font-size: 11px; }
+    #product-tab th, #product-tab td, #report-tab th, #report-tab td, #user-tab th, #user-tab td { padding: 7px !important; }
+    .mobile-hide { display:none !important; }
+}
+@media (min-width: 641px) { .mobile-bottom-checkout { display:none !important; } }
+        .payment-option { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 8px; border-radius: 14px; border: 2px solid var(--border-soft); background: var(--bg-panel-soft); cursor: pointer; transition: all .15s ease; color: var(--text-muted); }
+        .payment-option:hover { border-color: var(--accent); color: var(--text-main); }
+        .payment-option.active { border-color: var(--accent); background: var(--accent-soft); color: #d8b4fe; }
+        .payment-option i { font-size: 22px; }
+</style>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen font-sans select-none">
 <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-40">
 <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row justify-between items-center gap-3">
 <div class="flex items-center space-x-3">
-<img alt="第二引力 Logo" class="h-24 w-auto object-contain filter drop-shadow-[0_0_8px_rgba(34,211,238,0.2)]" src="Logo.png"/>
+<img alt="第二引力 Logo" class="h-24 w-auto object-contain filter drop-shadow-[0_0_8px_rgba(168,85,247,0.3)]" src="Logo.png"/>
 <h1 class="text-lg font-bold tracking-wider text-orange-300 hidden sm:block">第二引力销售系统</h1>
 </div>
 <div class="flex items-center space-x-2 w-full sm:w-auto justify-end">
 <nav class="flex space-x-1 text-xs sm:text-sm overflow-x-auto" id="nav-tabs">
-<button class="px-3 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 font-medium transition whitespace-nowrap" id="btn-product-tab" onclick="switchTab('product-tab')">
-<i class="fa-solid fa-box-archive mr-1"></i> 库存
-                    </button>
-<button class="px-3 py-2 rounded-lg bg-orange-600 text-white font-medium transition whitespace-nowrap" id="btn-sales-tab" onclick="switchTab('sales-tab')">
-<i class="fa-solid fa-cash-register mr-1"></i> 收银
-                    </button>
-<button class="px-3 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 font-medium transition whitespace-nowrap" id="btn-report-tab" onclick="switchTab('report-tab')">
-<i class="fa-solid fa-chart-line mr-1"></i> 报表
-                    </button>
-<button class="px-3 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 font-medium transition whitespace-nowrap hidden" data-permission="user_manage" id="btn-user-tab" onclick="switchTab('user-tab')">
-<i class="fa-solid fa-users-gear mr-1"></i> 用户
-                    </button>
+<button class="px-3 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 font-medium transition flex flex-col items-center gap-0.5 text-[10px]" id="btn-product-tab" onclick="switchTab('product-tab')"><i class="fa-solid fa-box-archive text-xs"></i><span>库存</span></button>
+<button class="px-3 py-2 rounded-lg bg-orange-600 text-white font-medium transition flex flex-col items-center gap-0.5 text-[10px]" id="btn-sales-tab" onclick="switchTab('sales-tab')"><i class="fa-solid fa-cash-register text-xs"></i><span>收银</span></button>
+<button class="px-3 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 font-medium transition flex flex-col items-center gap-0.5 text-[10px]" id="btn-report-tab" onclick="switchTab('report-tab')"><i class="fa-solid fa-chart-line text-xs"></i><span>报表</span></button>
+<button class="px-3 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 font-medium transition flex flex-col items-center gap-0.5 text-[10px] hidden" data-permission="user_manage" id="btn-user-tab" onclick="switchTab('user-tab')"><i class="fa-solid fa-users-gear text-xs"></i><span>用户</span></button>
 </nav>
-<div class="hidden sm:flex items-center gap-1 bg-slate-900 border border-slate-700 text-[11px] px-2 py-1.5 rounded-lg text-slate-300" id="current-user-badge">
-<i class="fa-solid fa-user-shield text-orange-300"></i><span id="current-user-name">未登录</span>
-</div>
-<button class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold px-3 py-2 rounded-lg flex items-center shadow-md transition whitespace-nowrap hidden" id="btn-logout" onclick="logoutUser()">
-<i class="fa-solid fa-right-from-bracket mr-1.5"></i> 退出
-                </button>
-<button class="bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-amber-500 text-white text-xs font-bold px-3 py-2 rounded-lg flex items-center shadow-md transition whitespace-nowrap" onclick="shareAppSystem()">
-<i class="fa-solid fa-share-nodes mr-1.5 animate-pulse"></i> 分享
-                </button>
+<div class="hidden sm:flex items-center gap-1 bg-slate-900 border border-slate-700 text-[11px] px-2 py-1.5 rounded-lg text-slate-300" id="current-user-badge"><i class="fa-solid fa-user-shield text-orange-300"></i><span id="current-user-name">未登录</span></div>
+<button class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold px-3 py-2 rounded-lg flex items-center shadow-md transition whitespace-nowrap hidden" id="btn-logout" onclick="logoutUser()"><i class="fa-solid fa-right-from-bracket mr-1.5"></i> 退出</button>
+<button class="bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-amber-500 text-white text-xs font-bold px-3 py-2 rounded-lg flex items-center shadow-md transition whitespace-nowrap" onclick="shareAppSystem()"><i class="fa-solid fa-share-nodes mr-1.5 animate-pulse"></i> 分享</button>
 </div>
 </div>
 </header>
 <main class="max-w-7xl mx-auto px-4 py-6">
+<!-- ===== 商品库存标签页 ===== -->
 <section class="tab-content hidden" id="product-tab">
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-xl lg:col-span-2">
 <h2 class="text-md font-bold mb-4 text-orange-300 border-b border-slate-700 pb-2"><i class="fa-solid fa-circle-plus mr-2"></i>商品录入</h2>
 <form class="space-y-4" id="product-form" onsubmit="saveProduct(event)">
-<div>
-<label class="block text-xs font-medium text-slate-400 mb-1">名称 *</label>
-<input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 text-slate-100" id="p-name" placeholder="请输入名称" required="" type="text"/>
-</div>
+<div><label class="block text-xs font-medium text-slate-400 mb-1">名称 *</label><input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 text-slate-100" id="p-name" placeholder="请输入名称" required="" type="text"/></div>
 <div class="grid grid-cols-2 gap-4">
-<div>
-<label class="block text-xs font-medium text-slate-400 mb-1">单价 *</label>
-<input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 text-slate-100" id="p-price" placeholder="0.00" required="" step="0.01" type="number"/>
+<div><label class="block text-xs font-medium text-slate-400 mb-1">单价 *</label><input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 text-slate-100" id="p-price" placeholder="0.00" required="" step="0.01" type="number"/></div>
+<div><label class="block text-xs font-medium text-slate-400 mb-1">设计师</label><input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 text-slate-100" id="p-designer" placeholder="未署名" type="text"/></div>
+<div class="col-span-2"><label class="block text-xs font-medium text-slate-400 mb-1">库存 / 预警</label><div class="grid grid-cols-2 gap-3"><input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 text-slate-100" id="p-stock" min="0" placeholder="库存数量" type="number" value="0"/><input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 text-slate-100" id="p-low-stock" min="0" placeholder="预警线" type="number" value="5"/></div></div>
 </div>
-<div>
-<label class="block text-xs font-medium text-slate-400 mb-1">设计师</label>
-<input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 text-slate-100" id="p-designer" placeholder="未署名" type="text"/>
-</div>
-<div class="col-span-2">
-<label class="block text-xs font-medium text-slate-400 mb-1">库存 / 预警</label>
-<div class="grid grid-cols-2 gap-3">
-<input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 text-slate-100" id="p-stock" min="0" placeholder="库存数量" type="number" value="0"/>
-<input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 text-slate-100" id="p-low-stock" min="0" placeholder="预警线" type="number" value="5"/>
-</div>
-</div>
-</div>
-<div>
-<label class="block text-xs font-medium text-slate-400 mb-1">图片 *</label>
-<div class="relative border-2 border-dashed border-slate-600 hover:border-orange-500 rounded-lg p-4 bg-slate-950/40 text-center cursor-pointer transition" onclick="document.getElementById('p-image-file').click()">
-<input accept="image/*" class="hidden" id="p-image-file" onchange="previewUploadedImage(this, 'add')" type="file"/>
-<div class="space-y-1 py-1" id="upload-placeholder">
-<i class="fa-solid fa-cloud-arrow-up text-slate-500 text-2xl"></i>
-<p class="text-xs text-slate-300 font-medium">上传图片</p>
-</div>
-<div class="hidden relative inline-block" id="upload-preview-zone">
-<img class="max-h-24 rounded border border-slate-700 shadow-md" id="upload-preview-img" src=""/>
-<button class="absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs shadow" onclick="clearUploadedImage(event, 'add')" type="button">
-<i class="fa-solid fa-xmark"></i>
-</button>
-</div>
-</div>
-</div>
-<button class="w-full bg-orange-500 hover:bg-orange-600 text-slate-950 font-bold py-2.5 rounded-lg text-sm transition shadow-lg shadow-orange-500/10" type="submit">
-<i class="fa-solid fa-qrcode mr-2"></i>保存并生成码
-                        </button>
+<div><label class="block text-xs font-medium text-slate-400 mb-1">图片 *</label><div class="relative border-2 border-dashed border-slate-600 hover:border-orange-500 rounded-lg p-4 bg-slate-950/40 text-center cursor-pointer transition" onclick="document.getElementById('p-image-file').click()"><input accept="image/*" class="hidden" id="p-image-file" onchange="previewUploadedImage(this, 'add')" type="file"/><div class="space-y-1 py-1" id="upload-placeholder"><i class="fa-solid fa-cloud-arrow-up text-slate-500 text-2xl"></i><p class="text-xs text-slate-300 font-medium">上传图片</p></div><div class="hidden relative inline-block" id="upload-preview-zone"><img class="max-h-24 rounded border border-slate-700 shadow-md" id="upload-preview-img" src=""/><button class="absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs shadow" onclick="clearUploadedImage(event, 'add')" type="button"><i class="fa-solid fa-xmark"></i></button></div></div></div>
+<button class="w-full bg-orange-500 hover:bg-orange-600 text-slate-950 font-bold py-2.5 rounded-lg text-sm transition shadow-lg shadow-orange-500/10" type="submit"><i class="fa-solid fa-qrcode mr-2"></i>保存并生成码</button>
 </form>
 </div>
 <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-xl flex flex-col items-center justify-between min-h-[280px]">
 <h2 class="text-sm font-bold text-slate-300 self-start border-b border-slate-700 pb-2 w-full"><i class="fa-solid fa-image-portrait mr-2"></i>商品码</h2>
-<div class="my-4 p-3 bg-white rounded flex flex-col items-center shadow-inner" id="qr-display-zone">
-<div id="qrcode-canvas"></div>
-<p class="text-slate-900 font-mono text-[10px] mt-2 font-bold tracking-wider" id="qr-prod-id">等待商品录入</p>
-</div>
-<button class="w-full bg-slate-700 text-slate-400 font-medium py-2 rounded-lg text-xs transition cursor-not-allowed" disabled="" id="btn-download-qr" onclick="downloadQR()">
-<i class="fa-solid fa-download mr-2"></i>导出二维码
-                    </button>
+<div class="my-4 p-3 bg-white rounded flex flex-col items-center shadow-inner" id="qr-display-zone"><div id="qrcode-canvas"></div><p class="text-slate-900 font-bold text-xs mt-1" id="qr-prod-name"></p><p class="text-slate-900 font-mono text-[10px] mt-0.5 font-bold tracking-wider" id="qr-prod-id">等待商品录入</p></div>
+<button class="w-full bg-slate-700 text-slate-400 font-medium py-2 rounded-lg text-xs transition cursor-not-allowed" disabled="" id="btn-download-qr" onclick="downloadQR()"><i class="fa-solid fa-download mr-2"></i>导出二维码</button>
 </div>
 </div>
 <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-xl mt-6">
-<h2 class="text-md font-bold mb-3 text-slate-300"><i class="fa-solid fa-warehouse mr-2"></i>商品库</h2>
-<div class="overflow-x-auto">
-<table class="w-full text-left border-collapse text-xs">
-<thead>
-<tr class="border-b border-slate-700 text-slate-400 bg-slate-900/30">
-<th class="p-3">图</th>
-<th class="p-3">ID</th>
-<th class="p-3">名称</th>
-<th class="p-3">设计</th>
-<th class="p-3">售价</th>
-<th class="p-3">库存</th>
-<th class="p-3 text-center">操作</th>
-</tr>
-</thead>
-<tbody id="product-table-body"></tbody>
-</table>
-</div>
+<div class="flex items-center justify-between mb-3"><h2 class="text-sm font-bold text-slate-300"><i class="fa-solid fa-warehouse mr-2"></i>商品库存台账</h2><div class="relative"><i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i><input class="bg-slate-900 border border-slate-600 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-orange-500 placeholder-slate-500" id="product-search" oninput="renderProductTable()" placeholder="搜索商品..." type="text"/></div></div>
+<div class="overflow-x-auto"><table class="w-full text-left border-collapse text-xs"><thead><tr class="border-b border-slate-700 text-slate-400"><th class="p-2">图片</th><th class="p-2">名称</th><th class="p-2">ID</th><th class="p-2">单价</th><th class="p-2">库存</th><th class="p-2">设计师</th><th class="p-2 text-center">操作</th></tr></thead><tbody id="product-table-body"></tbody></table></div>
 </div>
 </section>
-<section class="tab-content block" id="sales-tab">
+<!-- ===== 收银标签页 ===== -->
+<section class="tab-content" id="sales-tab">
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-<div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-xl lg:col-span-2 flex flex-col justify-between">
-<div>
-<div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-2">
-<h2 class="text-md font-bold text-orange-300"><i class="fa-solid fa-cart-shopping mr-2"></i>收银台</h2>
-<button class="text-[11px] bg-red-950 text-red-400 border border-red-900 px-2 py-0.5 rounded hover:bg-red-900 transition" onclick="clearCart()">清空</button>
+<div class="lg:col-span-2 space-y-4">
+<div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-xl" id="interactive-reader-container">
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3"><h2 class="text-sm font-bold text-slate-300"><i class="fa-solid fa-camera mr-2"></i>摄像头扫码</h2><div class="flex gap-2"><button class="text-xs bg-orange-500 hover:bg-orange-600 text-slate-950 font-bold px-3 py-1.5 rounded-lg" id="start-scanner-btn" onclick="startCameraScan()"><i class="fa-solid fa-camera mr-1"></i>开启扫码</button><button class="text-xs bg-slate-700 text-slate-300 font-bold px-3 py-1.5 rounded-lg hidden" id="stop-scanner-btn" onclick="stopCameraScan()"><i class="fa-solid fa-stop mr-1"></i>关闭</button></div></div>
+<div class="relative rounded-xl overflow-hidden border border-slate-700 bg-black" id="reader" style="min-height:200px;max-height:350px;"></div>
+<div class="flex gap-2 mt-2"><input class="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-orange-500" id="scan-result" onkeydown="manualScanAndEnter(event)" placeholder="扫码结果或手动输入商品码" type="text"/><button class="bg-orange-500 hover:bg-orange-600 text-slate-950 font-bold px-3 py-1.5 rounded-lg text-xs" onclick="manualScan()"><i class="fa-solid fa-check mr-1"></i>添加</button></div>
 </div>
-<div class="overflow-x-auto min-h-[220px]">
-<table class="w-full text-left text-xs">
-<thead>
-<tr class="border-b border-slate-700 text-slate-400">
-<th class="p-2">商品</th>
-<th class="p-2">单价</th>
-<th class="p-2">折扣</th>
-<th class="p-2" width="96">数量</th>
-<th class="p-2">小计</th>
-<th class="p-2 text-center">删</th>
-</tr>
-</thead>
-<tbody id="cart-table-body"></tbody>
-</table>
-</div>
-</div>
-<div class="border-t border-slate-700 pt-4 mt-4 flex justify-between items-center">
-<span class="text-xs text-slate-400">应收</span>
-<span class="text-2xl font-black text-orange-300 transition-all duration-200" id="cart-total-amount">￥0.00</span>
+<div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-xl">
+<h2 class="text-sm font-bold mb-2 text-slate-300"><i class="fa-solid fa-cart-shopping mr-2"></i>购物车</h2>
+<div class="overflow-x-auto"><table class="w-full text-left border-collapse text-xs"><thead><tr class="border-b border-slate-700 text-slate-400"><th class="p-2">商品</th><th class="p-2">单价</th><th class="p-2">折扣</th><th class="p-2">数量</th><th class="p-2">小计</th><th class="p-2 text-center">操作</th></tr></thead><tbody id="cart-table-body"><tr><td colspan="7" class="p-5 text-center text-slate-500">请扫码或搜索加入商品</td></tr></tbody></table></div>
+<div class="flex justify-between items-center mt-3 pt-2 border-t border-slate-700 desktop-cart-total"><span class="text-slate-400 font-medium text-sm">合计</span><span class="text-2xl font-black text-orange-300" id="cart-total-amount">￥0.00</span></div>
 </div>
 </div>
 <div class="space-y-4">
-<div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-xl transition-all duration-300" id="interactive-reader">
-<h2 class="text-xs font-bold text-slate-400 mb-3 uppercase tracking-widest flex justify-between items-center">
-<span><i class="fa-solid fa-camera mr-1.5 text-orange-300"></i>扫码</span>
-<span class="text-[9px] bg-amber-950 text-amber-400 px-1.5 py-0.5 rounded animate-pulse">点屏对焦</span>
-</h2>
-<div class="relative overflow-hidden rounded-lg border border-slate-700 bg-slate-950 aspect-square flex flex-col items-center justify-center mb-3 cursor-crosshair" id="interactive-reader-container" onclick="triggerTapToFocus(event)">
-<div class="apple-focus-ring" id="apple-focus-box"></div>
-<div class="absolute inset-0 flex flex-col items-center justify-center text-slate-500 text-xs p-4 text-center z-10" id="reader-placeholder">
-<i class="fa-solid fa-qrcode text-4xl mb-2 text-slate-600 animate-pulse"></i>
-<p>扫码预览</p>
-<p class="text-[10px] text-slate-600 mt-1">点按钮开启</p>
-</div>
-<div class="w-full h-full object-cover" id="reader"></div>
-<div class="absolute inset-4 border border-orange-500/20 pointer-events-none rounded flex items-center justify-center">
-<div class="w-full h-[1px] bg-gradient-to-r from-transparent via-orange-300 to-transparent absolute top-0 animate-[bounce_2s_infinite]"></div>
-</div>
-</div>
-<div class="grid grid-cols-2 gap-2 mb-2">
-<button class="col-span-2 bg-orange-500 hover:bg-orange-600 text-slate-950 font-bold py-2.5 rounded-lg text-xs transition flex items-center justify-center gap-1.5 shadow-md shadow-orange-500/10" id="btn-start-scan" onclick="startCameraScan()">
-<i class="fa-solid fa-video"></i> 手机扫码
-                            </button>
-<button class="bg-slate-700 hover:bg-slate-600 text-orange-300 font-bold py-2.5 rounded-lg text-xs transition hidden items-center justify-center gap-1.5 shadow-md" id="btn-torch" onclick="toggleTorch()">
-<i class="fa-solid fa-bolt"></i> 手电筒
-                            </button>
-<button class="bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-lg text-xs transition flex items-center justify-center gap-1.5 hidden shadow-md" id="btn-stop-scan" onclick="stopCameraScan()">
-<i class="fa-solid fa-video-slash"></i> 关闭
-                            </button>
-</div>
-<div class="text-[10px] text-slate-400 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 mb-2 hidden" id="scan-status">扫码准备中...</div>
+<div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-xl">
+<h2 class="text-xs font-bold text-slate-400 mb-2 border-b border-slate-700 pb-2"><i class="fa-solid fa-barcode mr-1"></i>快速搜索与录入</h2>
 <div class="border-t border-slate-700/60 pt-3 mt-1 space-y-3 relative">
+<div><label class="block text-[10px] text-slate-500 mb-1">搜索商品</label><div class="relative"><div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-500"><i class="fa-solid fa-magnifying-glass text-[10px]"></i></div><input class="w-full bg-slate-900 border border-slate-600 rounded-lg pl-7 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-orange-500 placeholder-slate-500" id="search-prod-input" onfocus="filterSearchProducts()" oninput="filterSearchProducts()" placeholder="名称/ID 搜索" type="text"/><div class="absolute left-0 right-0 mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-2xl max-h-40 overflow-y-auto hidden z-50 divide-y divide-slate-700/50" id="search-results-panel"></div></div></div>
+<div><label class="block text-[10px] text-slate-500 mb-1">点选商品</label><div class="flex gap-1.5"><select class="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-orange-500" id="mock-scanner-dropdown"><option value="">选择商品</option></select><button class="bg-slate-700 hover:bg-slate-600 text-orange-300 font-bold px-2.5 py-1.5 rounded-lg text-xs transition border border-slate-600 whitespace-nowrap" onclick="addDropdownProductToCart()">加入</button></div></div>
+</div>
+<div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-xl desktop-checkout-card">
+<div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-xl" id="scanner-gun-panel">
+<h2 class="text-xs font-bold text-slate-400 mb-2 border-b border-slate-700 pb-2"><i class="fa-solid fa-barcode mr-1"></i>扫码枪</h2>
+<div class="space-y-3 pt-2">
 <div>
-<label class="block text-[10px] text-slate-500 mb-1">搜索商品</label>
-<div class="relative">
-<div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-500">
-<i class="fa-solid fa-magnifying-glass text-[10px]"></i>
-</div>
-<input class="w-full bg-slate-900 border border-slate-600 rounded-lg pl-7 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-orange-500 placeholder-slate-500" id="search-prod-input" onfocus="filterSearchProducts()" oninput="filterSearchProducts()" placeholder="名称/ID 搜索" type="text"/>
-<div class="absolute left-0 right-0 mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-2xl max-h-40 overflow-y-auto hidden z-50 divide-y divide-slate-700/50" id="search-results-panel"></div>
-</div>
-</div>
-<div>
-<label class="block text-[10px] text-slate-500 mb-1">点选商品</label>
+<label class="block text-[10px] text-slate-500 mb-1" for="scanner-gun-input">扫码枪</label>
 <div class="flex gap-1.5">
-<select class="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-orange-500" id="mock-scanner-dropdown">
-<option value="">选择商品</option>
-</select>
-<button class="bg-slate-700 hover:bg-slate-600 text-orange-300 font-bold px-2.5 py-1.5 rounded-lg text-xs transition border border-slate-600 whitespace-nowrap" onclick="addDropdownProductToCart()">
-                                        加入
-                                    </button>
+<input class="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-orange-500" id="scanner-gun-input" placeholder="扫码枪扫描或粘贴商品码回车" type="text" onkeydown="if(event.key==='Enter'){addToCart(this.value);this.value='';event.preventDefault()}"/>
+<button class="bg-orange-500 hover:bg-orange-600 text-slate-950 font-bold px-2.5 py-1.5 rounded-lg text-xs transition whitespace-nowrap" id="scanner-gun-submit-btn" onclick="var inp=document.getElementById('scanner-gun-input');if(inp.value.trim()){addToCart(inp.value.trim());inp.value=''}">录入</button>
+<button class="bg-slate-700 hover:bg-slate-600 text-orange-300 font-bold px-2.5 py-1.5 rounded-lg text-xs transition border border-slate-600 whitespace-nowrap" id="scanner-gun-focus-btn" onclick="document.getElementById('scanner-gun-input').focus()">聚焦</button>
 </div>
 </div>
+<p class="text-[10px] text-slate-500 mt-1" id="scanner-gun-status">扫码枪输入后自动加入购物车。</p>
 </div>
 </div>
 <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-xl desktop-checkout-card">
-<button class="w-full bg-orange-500 hover:bg-orange-600 text-slate-950 font-black py-3 rounded-lg text-md transition shadow-lg shadow-orange-500/10" onclick="checkoutAndPrint()">
-<i class="fa-solid fa-print mr-1.5"></i>结算打印
-                        </button>
-</div>
+<button class="w-full bg-orange-500 hover:bg-orange-600 text-slate-950 font-black py-3 rounded-lg text-md transition shadow-lg shadow-orange-500/10" onclick="showPaymentModal()"><i class="fa-solid fa-credit-card mr-1.5"></i>结算收款</button>
 </div>
 </div>
 </section>
+<!-- ===== 报表标签页 ===== -->
 <section class="tab-content hidden" id="report-tab">
 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-<div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-xl">
-<p class="text-[10px] text-slate-400 font-medium tracking-wider">累计全币种毛利流水</p>
-<h3 class="text-2xl font-bold text-orange-300 mt-1" id="stat-revenue">￥0.00</h3>
-</div>
-<div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-xl">
-<p class="text-[10px] text-slate-400 font-medium tracking-wider">系统成功审计单量</p>
-<h3 class="text-2xl font-bold text-orange-300 mt-1" id="stat-orders">0 单</h3>
-</div>
-<div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-xl">
-<p class="text-[10px] text-slate-400 font-medium tracking-wider">最高连带率爆款</p>
-<h3 class="text-lg font-bold text-amber-400 mt-1 truncate" id="stat-bestseller">暂无数据</h3>
-</div>
+<div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-xl"><p class="text-[10px] text-slate-400 font-medium tracking-wider">累计全币种毛利流水</p><h3 class="text-2xl font-bold text-orange-300 mt-1" id="stat-revenue">￥0.00</h3></div>
+<div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-xl"><p class="text-[10px] text-slate-400 font-medium tracking-wider">系统成功审计单量</p><h3 class="text-2xl font-bold text-orange-300 mt-1" id="stat-orders">0 单</h3></div>
+<div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-xl"><p class="text-[10px] text-slate-400 font-medium tracking-wider">最高连带率爆款</p><h3 class="text-lg font-bold text-amber-400 mt-1 truncate" id="stat-bestseller">暂无数据</h3></div>
 </div>
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-<div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-xl lg:col-span-2">
-<h2 class="text-sm font-bold mb-3 text-slate-300"><i class="fa-solid fa-chart-area mr-2"></i>年度财务波形走势图</h2>
-<div class="h-[260px] w-full"><canvas id="salesTrendChart"></canvas></div>
-</div>
-<div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-xl flex flex-col justify-between">
-<div>
-<h2 class="text-sm font-bold text-amber-400 border-b border-slate-700 pb-2 mb-3"><i class="fa-solid fa-brain mr-2"></i>智能数字商业决策建议</h2>
-<div class="text-xs leading-relaxed text-slate-300 bg-slate-900/40 p-3 rounded border border-slate-700 h-[190px] overflow-y-auto" id="evaluation-box"></div>
-</div>
-<button class="mt-2 text-[10px] text-red-500 text-left hover:underline" onclick="resetSystemData()"><i class="fa-solid fa-triangle-exclamation mr-1"></i>重置本地缓存并清除云端</button>
-</div>
+<div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-xl lg:col-span-2"><h2 class="text-sm font-bold mb-3 text-slate-300"><i class="fa-solid fa-chart-area mr-2"></i>年度财务波形走势图</h2><div class="h-[260px] w-full"><canvas id="salesTrendChart"></canvas></div></div>
+<div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-xl flex flex-col justify-between"><div><h2 class="text-sm font-bold text-amber-400 border-b border-slate-700 pb-2 mb-3"><i class="fa-solid fa-brain mr-2"></i>智能数字商业决策建议</h2><div class="text-xs leading-relaxed text-slate-300 bg-slate-900/40 p-3 rounded border border-slate-700 h-[190px] overflow-y-auto" id="evaluation-box"></div></div><button class="mt-2 text-[10px] text-red-500 text-left hover:underline" onclick="resetSystemData()"><i class="fa-solid fa-triangle-exclamation mr-1"></i>重置本地缓存并清除云端</button></div>
 </div>
 <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-<div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-xl">
-<div class="flex items-center justify-between border-b border-slate-700 pb-2 mb-2">
-<h3 class="font-bold text-orange-300 text-xs"><i class="fa-solid fa-calendar-day mr-1.5"></i>本日销量 TOP 10</h3>
-<span class="text-[9px] bg-orange-950 text-orange-300 px-1.5 py-0.5 rounded" id="label-today">2026-06-08</span>
-</div>
-<ol class="space-y-1.5 text-xs text-slate-300 min-h-[120px]" id="top-day-list"></ol>
-</div>
-<div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-xl">
-<div class="flex items-center justify-between border-b border-slate-700 pb-2 mb-2">
-<h3 class="font-bold text-orange-300 text-xs"><i class="fa-solid fa-calendar-days mr-1.5"></i>本月销量 TOP 10</h3>
-<span class="text-[9px] bg-orange-950 text-orange-300 px-1.5 py-0.5 rounded" id="label-month">2026-06</span>
-</div>
-<ol class="space-y-1.5 text-xs text-slate-300 min-h-[120px]" id="top-month-list"></ol>
-</div>
-<div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-xl">
-<div class="flex items-center justify-between border-b border-slate-700 pb-2 mb-2">
-<h3 class="font-bold text-amber-400 text-xs"><i class="fa-solid fa-calendar-minus mr-1.5"></i>本年销量 TOP 10</h3>
-<span class="text-[9px] bg-amber-950 text-amber-400 px-1.5 py-0.5 rounded" id="label-year">2026年</span>
-</div>
-<ol class="space-y-1.5 text-xs text-slate-300 min-h-[120px]" id="top-year-list"></ol>
-</div>
+<div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-xl"><div class="flex items-center justify-between border-b border-slate-700 pb-2 mb-2"><h3 class="font-bold text-orange-300 text-xs"><i class="fa-solid fa-calendar-day mr-1.5"></i>本日销量 TOP 10</h3><span class="text-[9px] bg-orange-950 text-orange-300 px-1.5 py-0.5 rounded" id="label-today"></span></div><ol class="space-y-1.5 text-xs text-slate-300 min-h-[120px]" id="top-day-list"></ol></div>
+<div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-xl"><div class="flex items-center justify-between border-b border-slate-700 pb-2 mb-2"><h3 class="font-bold text-orange-300 text-xs"><i class="fa-solid fa-calendar-days mr-1.5"></i>本月销量 TOP 10</h3><span class="text-[9px] bg-orange-950 text-orange-300 px-1.5 py-0.5 rounded" id="label-month"></span></div><ol class="space-y-1.5 text-xs text-slate-300 min-h-[120px]" id="top-month-list"></ol></div>
+<div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-xl"><div class="flex items-center justify-between border-b border-slate-700 pb-2 mb-2"><h3 class="font-bold text-amber-400 text-xs"><i class="fa-solid fa-calendar-minus mr-1.5"></i>本年销量 TOP 10</h3><span class="text-[9px] bg-amber-950 text-amber-400 px-1.5 py-0.5 rounded" id="label-year"></span></div><ol class="space-y-1.5 text-xs text-slate-300 min-h-[120px]" id="top-year-list"></ol></div>
 </div>
 <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-xl mt-6">
 <div class="flex flex-wrap justify-between items-center gap-2 mb-3 border-b border-slate-700 pb-2">
 <h2 class="text-sm font-bold text-slate-300"><i class="fa-solid fa-list-check mr-2"></i>系统历史全量账单流向审计</h2>
 <div class="flex gap-2">
-<button class="text-[11px] bg-orange-950 px-2 py-1 rounded text-orange-300 font-bold hover:bg-orange-900 transition" onclick="exportOrdersCsv()"><i class="fa-solid fa-file-csv mr-1"></i>导出账单 CSV</button>
-<button class="text-[11px] bg-orange-950 px-2 py-1 rounded text-orange-300 font-bold hover:bg-orange-900 transition" onclick="exportProductsCsv()"><i class="fa-solid fa-boxes-stacked mr-1"></i>导出商品 CSV</button>
-<button aria-label="清除全部销售记录" class="hidden text-[11px] bg-red-950 border border-red-800 px-2 py-1 rounded text-red-300 font-bold hover:bg-red-900 transition" id="admin-clear-sales-btn" onclick="clearAllSalesRecordsByAdmin()" title="仅管理员可用：输入当前管理员密码后清除全部销售记录" type="button"><i class="fa-solid fa-trash-can mr-1"></i>清除销售记录</button>
+<button class="text-xs bg-orange-950 px-2 py-1 rounded text-orange-300 font-bold hover:bg-orange-900 transition" onclick="exportOrdersCsv()"><i class="fa-solid fa-file-csv mr-1"></i>导出账单 CSV</button>
+<button class="text-xs bg-orange-950 px-2 py-1 rounded text-orange-300 font-bold hover:bg-orange-900 transition" onclick="exportProductsCsv()"><i class="fa-solid fa-boxes-stacked mr-1"></i>导出商品 CSV</button>
+<button aria-label="清除全部销售记录" class="text-xs bg-red-950 border border-red-800 px-2 py-1 rounded text-red-300 font-bold hover:bg-red-900 transition" id="admin-clear-sales-btn" onclick="clearAllSalesRecordsByAdmin()" title="仅管理员可用：输入当前管理员密码后清除全部销售记录" type="button"><i class="fa-solid fa-trash-can mr-1"></i>清除销售记录</button>
 </div>
 </div>
-<div class="overflow-x-auto">
-<table class="w-full text-left border-collapse text-xs">
-<thead>
-<tr class="border-b border-slate-700 text-slate-400 bg-slate-900/40 select-none">
-<th class="p-3 cursor-pointer hover:text-orange-300" onclick="handleSort('id')">核心流水单号 <span id="sort-icon-id"></span></th>
-<th class="p-3 cursor-pointer hover:text-orange-300" onclick="handleSort('date')">交易记录时间 <span id="sort-icon-date"></span></th>
-<th class="p-3">打包商品细节</th>
-<th class="p-3 cursor-pointer hover:text-orange-300" onclick="handleSort('total')">入账总金额 <span id="sort-icon-total"></span></th>
-<th class="p-3 text-center">操作</th>
-</tr>
-</thead>
-<tbody id="ledger-table-body"></tbody>
-</table>
-</div>
+<div class="overflow-x-auto"><table class="w-full text-left border-collapse text-xs"><thead><tr class="border-b border-slate-700 text-slate-400 bg-slate-900/40 select-none"><th class="p-3 cursor-pointer hover:text-orange-300" onclick="handleSort('id')">核心流水单号 <span id="sort-icon-id"></span></th><th class="p-3 cursor-pointer hover:text-orange-300" onclick="handleSort('date')">交易记录时间 <span id="sort-icon-date"></span></th><th class="p-3">打包商品细节</th><th class="p-3 cursor-pointer hover:text-orange-300" onclick="handleSort('total')">入账总金额 <span id="sort-icon-total"></span></th><th class="p-3 text-center">操作</th></tr></thead><tbody id="ledger-table-body"></tbody></table></div>
 </div>
 </section>
+<!-- ===== 用户管理标签页 ===== -->
 <section class="tab-content hidden" id="user-tab">
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-xl">
 <h2 class="text-md font-bold mb-4 text-orange-300 border-b border-slate-700 pb-2"><i class="fa-solid fa-user-plus mr-2"></i>新增/编辑系统用户</h2>
-<form class="space-y-4 text-xs" id="user-form" onsubmit="saveUserAccount(event)">
-<input id="u-edit-id" type="hidden"/>
-<div>
-<label class="block text-slate-400 mb-1">登录账号 *</label>
-<input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-slate-100" id="u-username" placeholder="例如 cashier01" required="" type="text"/>
-</div>
-<div>
-<label class="block text-slate-400 mb-1">显示姓名 *</label>
-<input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-slate-100" id="u-display-name" placeholder="例如 张三" required="" type="text"/>
-</div>
-<div>
-<label class="block text-slate-400 mb-1">登录密码 <span class="text-slate-500">编辑时留空则不改</span></label>
-<input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-slate-100" id="u-password" placeholder="至少 4 位" type="password"/>
-</div>
-<div class="grid grid-cols-2 gap-3">
-<div>
-<label class="block text-slate-400 mb-1">角色</label>
-<select class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-slate-100" id="u-role">
-<option value="admin">管理员</option>
-<option value="manager">店长</option>
-<option value="cashier">收银员</option>
-<option value="viewer">只读审计</option>
-</select>
-</div>
-<div>
-<label class="block text-slate-400 mb-1">状态</label>
-<select class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-slate-100" id="u-status">
-<option value="active">启用</option>
-<option value="disabled">停用</option>
-</select>
-</div>
-</div>
-<div class="flex gap-2 pt-2">
-<button class="w-1/3 bg-slate-700 hover:bg-slate-600 font-bold py-2 rounded-lg" onclick="resetUserForm()" type="button">清空</button>
-<button class="w-2/3 bg-orange-500 hover:bg-orange-600 text-slate-950 font-bold py-2 rounded-lg" type="submit">保存用户</button>
-</div>
+<form class="space-y-4 text-xs" id="user-form" onsubmit="saveUserAccount(event)"><input id="u-edit-id" type="hidden"/>
+<div><label class="block text-slate-400 mb-1">登录账号 *</label><input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-slate-100" id="u-username" placeholder="例如 cashier01" required="" type="text"/></div>
+<div><label class="block text-slate-400 mb-1">显示姓名 *</label><input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-slate-100" id="u-display-name" placeholder="例如 张三" required="" type="text"/></div>
+<div><label class="block text-slate-400 mb-1">登录密码 <span class="text-slate-500">编辑时留空则不改</span></label><input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-slate-100" id="u-password" placeholder="至少 4 位" type="password"/></div>
+<div class="grid grid-cols-2 gap-3"><div><label class="block text-slate-400 mb-1">角色</label><select class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-slate-100" id="u-role"><option value="admin">管理员</option><option value="manager">店长</option><option value="cashier">收银员</option><option value="viewer">只读审计</option></select></div><div><label class="block text-slate-400 mb-1">状态</label><select class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-slate-100" id="u-status"><option value="active">启用</option><option value="disabled">停用</option></select></div></div>
+<div class="flex gap-2 pt-2"><button class="w-1/3 bg-slate-700 hover:bg-slate-600 font-bold py-2 rounded-lg" onclick="resetUserForm()" type="button">清空</button><button class="w-2/3 bg-orange-500 hover:bg-orange-600 text-slate-950 font-bold py-2 rounded-lg" type="submit">保存用户</button></div>
 </form>
-<div class="mt-4 bg-slate-900/50 border border-slate-700 rounded-lg p-3 text-[11px] text-slate-400 leading-relaxed">
-                        首次上线后请进入用户管理创建/修改管理员账号，并启用 Supabase RLS。
-                    </div>
+<div class="mt-4 bg-slate-900/50 border border-slate-700 rounded-lg p-3 text-xs text-slate-400 leading-relaxed">首次上线后请进入用户管理创建/修改管理员账号，并启用 Supabase RLS。</div>
 </div>
 <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-xl lg:col-span-2">
 <h2 class="text-md font-bold mb-3 text-slate-300"><i class="fa-solid fa-users mr-2"></i>用户权限台账</h2>
-<div class="overflow-x-auto">
-<table class="w-full text-left border-collapse text-xs">
-<thead>
-<tr class="border-b border-slate-700 text-slate-400 bg-slate-900/30">
-<th class="p-3">账号</th><th class="p-3">姓名</th><th class="p-3">角色</th><th class="p-3">状态</th><th class="p-3">最后登录</th><th class="p-3 text-center">操作</th>
-</tr>
-</thead>
-<tbody id="user-table-body"></tbody>
-</table>
-</div>
+<div class="overflow-x-auto"><table class="w-full text-left border-collapse text-xs"><thead><tr class="border-b border-slate-700 text-slate-400 bg-slate-900/30"><th class="p-3">账号</th><th class="p-3">姓名</th><th class="p-3">角色</th><th class="p-3">状态</th><th class="p-3">最后登录</th><th class="p-3 text-center">操作</th></tr></thead><tbody id="user-table-body"></tbody></table></div>
 </div>
 </div>
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
 <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-xl">
 <h2 class="text-md font-bold mb-4 text-amber-400 border-b border-slate-700 pb-2"><i class="fa-solid fa-key mr-2"></i>修改当前账号密码</h2>
-<form class="space-y-3 text-xs" onsubmit="changeOwnPassword(event)">
-<input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-slate-100" id="own-old-password" placeholder="当前密码" required="" type="password"/>
-<input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-slate-100" id="own-new-password" placeholder="新密码，至少 6 位" required="" type="password"/>
-<button class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-2 rounded-lg">更新密码</button>
-</form>
+<form class="space-y-3 text-xs" onsubmit="changeOwnPassword(event)"><input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-slate-100" id="own-old-password" placeholder="当前密码" required="" type="password"/><input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-slate-100" id="own-new-password" placeholder="新密码，至少 6 位" required="" type="password"/><button class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-2 rounded-lg">更新密码</button></form>
 </div>
 <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-xl lg:col-span-2">
-<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-3 border-b border-slate-700 pb-2">
-<h2 class="text-md font-bold text-slate-300"><i class="fa-solid fa-shield-halved mr-2"></i>操作审计日志</h2>
-<div class="flex flex-wrap gap-2">
-<button class="text-[11px] bg-slate-700 px-2 py-1 rounded text-orange-300 font-bold hover:bg-slate-600" onclick="exportAuditCsv()">导出日志</button>
-<button class="text-[11px] bg-red-900/70 border border-red-700 px-2 py-1 rounded text-red-100 font-bold hover:bg-red-800" data-permission="audit_delete" onclick="clearAuditLogs()">清空日志</button>
+<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-3 border-b border-slate-700 pb-2"><h2 class="text-md font-bold text-slate-300"><i class="fa-solid fa-shield-halved mr-2"></i>操作审计日志</h2><div class="flex flex-wrap gap-2"><button class="text-xs bg-slate-700 px-2 py-1 rounded text-orange-300 font-bold hover:bg-slate-600" onclick="exportAuditCsv()">导出日志</button><button class="text-xs bg-red-900/70 border border-red-700 px-2 py-1 rounded text-red-100 font-bold hover:bg-red-800" onclick="clearAuditLogs()">清空日志</button></div></div>
+<div class="overflow-x-auto max-h-72 overflow-y-auto"><table class="w-full text-left border-collapse text-xs"><thead><tr class="border-b border-slate-700 text-slate-400 bg-slate-900/30"><th class="p-3">时间</th><th class="p-3">用户</th><th class="p-3">动作</th><th class="p-3">对象</th><th class="p-3">说明</th><th class="p-3">操作</th></tr></thead><tbody id="audit-table-body"></tbody></table></div>
 </div>
 </div>
-<div class="overflow-x-auto max-h-72 overflow-y-auto">
-<table class="w-full text-left border-collapse text-xs">
-<thead><tr class="border-b border-slate-700 text-slate-400 bg-slate-900/30"><th class="p-3">时间</th><th class="p-3">用户</th><th class="p-3">动作</th><th class="p-3">对象</th><th class="p-3">说明</th><th class="p-3" data-permission="audit_delete">操作</th></tr></thead>
-<tbody id="audit-table-body"></tbody>
-</table>
-</div>
-</div>
+<div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-xl mt-6">
+<div class="flex items-center justify-between border-b border-slate-700 pb-2 mb-3"><h2 class="text-md font-bold text-purple-300"><i class="fa-solid fa-qrcode mr-2"></i>支付设置</h2><span class="text-[10px] text-slate-500">管理员</span></div>
+<form class="space-y-3 text-xs" onsubmit="savePaymentSettings(event)">
+<div><label class="block text-slate-400 mb-1">支付宝收款码图片链接</label><input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-slate-100" id="pay-alipay-qr" placeholder="输入支付宝收款码图片 URL 或上传"/></div>
+<div><label class="block text-slate-400 mb-1">微信收款码图片链接</label><input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-slate-100" id="pay-wechat-qr" placeholder="输入微信收款码图片 URL 或上传"/></div>
+<button class="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 rounded-lg" type="submit"><i class="fa-solid fa-floppy-disk mr-1"></i>保存支付设置</button>
+<p class="text-[9px] text-slate-500">结账时选择支付宝/微信会展示对应的收款二维码，收银员确认顾客扫码付款后完成订单。</p>
+</form>
 </div>
 </section>
 </main>
+<!-- ===== 登录弹窗 ===== -->
 <div class="fixed inset-0 bg-slate-950 z-[100] flex items-center justify-center p-4" id="login-modal">
 <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl max-w-sm w-full p-6">
-<div class="text-center mb-6">
-<div class="inline-flex w-12 h-12 rounded-full bg-orange-500/10 border border-orange-500/30 items-center justify-center mb-3">
-<i class="fa-solid fa-fingerprint text-orange-300 text-xl"></i>
-</div>
-<h2 class="text-xl font-black text-orange-300">第二引力销售系统</h2>
-<p class="text-xs text-slate-400 mt-1">多用户安全登录</p>
-</div>
-<form class="space-y-4" onsubmit="loginUser(event)">
-<div>
-<label class="block text-xs text-slate-400 mb-1">账号</label>
-<input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-orange-500" id="login-username" placeholder="请输入账号" required="" type="text"/>
-</div>
-<div>
-<label class="block text-xs text-slate-400 mb-1">密码</label>
-<input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-orange-500" id="login-password" placeholder="请输入密码" required="" type="password"/>
-</div>
-<button class="w-full bg-orange-500 hover:bg-orange-600 text-slate-950 font-black py-2.5 rounded-lg text-sm">登录系统</button>
-</form>
+<div class="text-center mb-6"><div class="inline-flex w-12 h-12 rounded-full bg-orange-500/10 border border-orange-500/30 items-center justify-center mb-3"><i class="fa-solid fa-fingerprint text-orange-300 text-xl"></i></div><h2 class="text-xl font-black text-orange-300">第二引力销售系统</h2><p class="text-xs text-slate-400 mt-1">多用户安全登录</p></div>
+<form class="space-y-4" onsubmit="loginUser(event)"><div><label class="block text-xs text-slate-400 mb-1">账号</label><input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-orange-500" id="login-username" placeholder="请输入账号" required="" type="text"/></div><div><label class="block text-xs text-slate-400 mb-1">密码</label><input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-orange-500" id="login-password" placeholder="请输入密码" required="" type="password"/></div><button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-slate-950 font-black py-2.5 rounded-lg text-sm">登录系统</button></form>
 <p class="hidden text-xs text-red-400 text-center mt-4" id="login-error"></p>
 </div>
 </div>
+<!-- ===== QR 查看弹窗 ===== -->
 <div class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 hidden" id="qr-view-modal">
 <div class="bg-slate-800 border border-slate-700 text-slate-100 p-5 rounded-xl shadow-2xl max-w-xs w-full flex flex-col items-center space-y-4">
-<div class="flex justify-between items-center border-b border-slate-700 pb-2 w-full">
-<h3 class="font-bold text-orange-300 text-sm"><i class="fa-solid fa-qrcode mr-2"></i>特征二维码资产</h3>
-<button class="text-slate-400 hover:text-slate-200 text-sm" onclick="closeQRViewModal()"><i class="fa-solid fa-xmark"></i></button>
-</div>
-<div class="p-4 bg-white rounded flex flex-col items-center shadow-inner mt-2">
-<div id="modal-qrcode-canvas"></div>
-<p class="text-slate-900 font-mono text-[11px] mt-2 font-bold tracking-wider" id="modal-qr-prod-id"></p>
-</div>
-<div class="text-center w-full px-1">
-<p class="text-xs font-bold text-slate-200 truncate" id="modal-qr-prod-name"></p>
-</div>
-<div class="flex space-x-2 w-full pt-1">
-<button class="w-1/3 bg-slate-700 hover:bg-slate-600 text-xs font-bold py-2 rounded-lg" onclick="closeQRViewModal()" type="button">关闭</button>
-<button class="w-2/3 bg-orange-500 hover:bg-orange-600 text-slate-950 text-xs font-bold py-2 rounded-lg shadow-lg flex items-center justify-center gap-1" onclick="downloadModalQR()" type="button">
-<i class="fa-solid fa-download"></i> 导出 PNG 资产
-                </button>
+<div class="flex justify-between items-center border-b border-slate-700 pb-2 w-full"><h3 class="font-bold text-orange-300 text-sm"><i class="fa-solid fa-qrcode mr-2"></i>特征二维码资产</h3><button class="text-slate-400 hover:text-slate-200 text-sm" onclick="closeQRViewModal()"><i class="fa-solid fa-xmark"></i></button></div>
+<div class="p-4 bg-white rounded flex flex-col items-center shadow-inner mt-2"><div id="modal-qrcode-canvas"></div><p class="text-slate-900 font-mono text-[10px] mt-2 font-bold tracking-wider" id="modal-qr-prod-id"></p></div>
+<div class="text-center w-full px-1"><p class="text-xs font-bold text-slate-200 truncate" id="modal-qr-prod-name"></p></div>
+<div class="flex space-x-2 w-full pt-1"><button class="w-1/3 bg-slate-700 hover:bg-slate-600 text-xs font-bold py-2 rounded-lg" onclick="closeQRViewModal()" type="button">关闭</button><button class="w-2/3 bg-orange-500 hover:bg-orange-600 text-slate-950 text-xs font-bold py-2 rounded-lg shadow-lg flex items-center justify-center gap-1" onclick="downloadModalQR()" type="button"><i class="fa-solid fa-download"></i> 导出 PNG 资产</button></div>
 </div>
 </div>
-</div>
+<!-- ===== 编辑商品弹窗 ===== -->
 <div class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 hidden" id="edit-product-modal">
 <div class="bg-slate-800 border border-slate-700 text-slate-100 p-5 rounded-xl shadow-2xl max-w-md w-full space-y-4">
-<div class="flex justify-between items-center border-b border-slate-700 pb-2">
-<h3 class="font-bold text-orange-300 text-md"><i class="fa-solid fa-pen-to-square mr-2"></i>修改基础物资商品属性</h3>
-<button class="text-slate-400 hover:text-slate-200 text-sm" onclick="closeEditModal()"><i class="fa-solid fa-xmark"></i></button>
-</div>
+<div class="flex justify-between items-center border-b border-slate-700 pb-2"><h3 class="font-bold text-orange-300 text-md"><i class="fa-solid fa-pen-to-square mr-2"></i>修改基础物资商品属性</h3><button class="text-slate-400 hover:text-slate-200 text-sm" onclick="closeEditModal()"><i class="fa-solid fa-xmark"></i></button></div>
 <form class="space-y-4 text-xs" onsubmit="saveEditProduct(event)">
-<div>
-<label class="block text-slate-400 mb-1">名称</label>
-<input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-slate-100" id="edit-p-name" required="" type="text"/>
-</div>
-<div class="grid grid-cols-2 gap-3">
-<div>
-<label class="block text-slate-400 mb-1">单价 (￥)</label>
-<input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-slate-100" id="edit-p-price" required="" step="0.01" type="number"/>
-</div>
-<div>
-<label class="block text-slate-400 mb-1">作者署名</label>
-<input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-slate-100" id="edit-p-designer" type="text"/>
-</div>
-</div>
-<div class="grid grid-cols-2 gap-3">
-<div>
-<label class="block text-slate-400 mb-1">库存数量</label>
-<input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-slate-100" id="edit-p-stock" min="0" type="number"/>
-</div>
-<div>
-<label class="block text-slate-400 mb-1">库存预警线</label>
-<input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-slate-100" id="edit-p-low-stock" min="0" type="number"/>
-</div>
-</div>
-<div>
-<label class="block text-slate-400 mb-1">重置/替换商品图片</label>
-<div class="relative border border-dashed border-slate-600 rounded-lg p-3 bg-slate-950/40 text-center cursor-pointer" onclick="document.getElementById('edit-p-image-file').click()">
-<input accept="image/*" class="hidden" id="edit-p-image-file" onchange="previewUploadedImage(this, 'edit')" type="file"/>
-<div class="inline-block relative" id="edit-upload-preview-zone">
-<img class="max-h-20 rounded border border-slate-700" id="edit-upload-preview-img" src=""/>
-</div>
-</div>
-</div>
-<div class="flex space-x-2 pt-2">
-<button class="w-1/3 bg-slate-700 hover:bg-slate-600 font-bold py-2 rounded-lg" onclick="closeEditModal()" type="button">取消</button>
-<button class="w-2/3 bg-orange-500 hover:bg-orange-600 text-slate-950 font-bold py-2 rounded-lg shadow" type="submit">保存修正变动</button>
-</div>
+<div><label class="block text-slate-400 mb-1">名称</label><input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-slate-100" id="edit-p-name" required="" type="text"/></div>
+<div class="grid grid-cols-2 gap-3"><div><label class="block text-slate-400 mb-1">单价 (￥)</label><input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-slate-100" id="edit-p-price" required="" step="0.01" type="number"/></div><div><label class="block text-slate-400 mb-1">作者署名</label><input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-slate-100" id="edit-p-designer" type="text"/></div></div>
+<div class="grid grid-cols-2 gap-3"><div><label class="block text-slate-400 mb-1">库存数量</label><input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-slate-100" id="edit-p-stock" min="0" type="number"/></div><div><label class="block text-slate-400 mb-1">库存预警线</label><input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-slate-100" id="edit-p-low-stock" min="0" type="number"/></div></div>
+<div><label class="block text-slate-400 mb-1">重置/替换商品图片</label><div class="relative border border-dashed border-slate-600 rounded-lg p-3 bg-slate-950/40 text-center cursor-pointer" onclick="document.getElementById('edit-p-image-file').click()"><input accept="image/*" class="hidden" id="edit-p-image-file" onchange="previewUploadedImage(this, 'edit')" type="file"/><div class="inline-block relative" id="edit-upload-preview-zone"><img class="max-h-20 rounded border border-slate-700" id="edit-upload-preview-img" src=""/></div></div></div>
+<div class="flex space-x-2 pt-2"><button class="w-1/3 bg-slate-700 hover:bg-slate-600 font-bold py-2 rounded-lg" onclick="closeEditModal()" type="button">取消</button><button class="w-2/3 bg-orange-500 hover:bg-orange-600 text-slate-950 font-bold py-2 rounded-lg shadow" type="submit">保存修正变动</button></div>
 </form>
 </div>
+<!-- ===== 支付方式选择弹窗 ===== -->
+<div class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 hidden" id="payment-modal">
+<div class="bg-slate-800 border border-slate-700 text-slate-100 p-5 rounded-xl shadow-2xl max-w-sm w-full">
+<div class="flex justify-between items-center border-b border-slate-700 pb-2"><h3 class="font-bold text-purple-300 text-md"><i class="fa-solid fa-credit-card mr-2"></i>选择支付方式</h3><button class="text-slate-400 hover:text-slate-200 text-sm" onclick="closePaymentModal()"><i class="fa-solid fa-xmark"></i></button></div>
+<div class="text-center py-4"><p class="text-[10px] text-slate-400">应收金额</p><p class="text-3xl font-black text-purple-300" id="payment-total">￥0.00</p></div>
+<div class="grid grid-cols-3 gap-3 mb-4">
+<button class="payment-option active" data-method="cash" onclick="selectPayment('cash')"><i class="fa-solid fa-money-bill-wave"></i><span class="text-[10px] font-bold">现金</span></button>
+<button class="payment-option" data-method="alipay" onclick="selectPayment('alipay')"><i class="fa-brands fa-alipay"></i><span class="text-[10px] font-bold">支付宝</span></button>
+<button class="payment-option" data-method="wechat" onclick="selectPayment('wechat')"><i class="fa-brands fa-weixin"></i><span class="text-[10px] font-bold">微信支付</span></button>
 </div>
+<div class="bg-slate-900/60 border border-slate-700 rounded-lg p-3 text-center hidden" id="payment-qr-area">
+<img class="w-36 h-36 mx-auto rounded border border-slate-600 object-contain bg-white" id="payment-qr-img" src="" alt="收款码"/>
+<p class="text-[10px] text-slate-400 mt-1" id="payment-qr-hint">请使用对应 App 扫码付款</p>
+</div>
+<div class="flex gap-2 pt-2 mt-1"><button class="w-1/3 bg-slate-700 hover:bg-slate-600 font-bold py-2.5 rounded-lg text-xs" onclick="closePaymentModal()">取消</button><button class="w-2/3 bg-purple-500 hover:bg-purple-600 text-white font-black py-2.5 rounded-lg text-xs shadow-lg" onclick="confirmPayment()"><i class="fa-solid fa-check mr-1"></i>确认收款并打印</button></div>
+</div>
+</div>
+</div>
+<!-- ===== 打印票据弹窗 ===== -->
 <div class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 hidden" id="printer-modal">
 <div class="bg-white text-slate-950 p-5 rounded-md shadow-2xl max-w-xs w-full font-mono text-xs border-t-8 border-dashed border-slate-400">
 <div class="text-center font-bold text-sm tracking-widest mb-1">第二引力销售 system</div>
 <div class="text-center text-[10px] text-slate-500 mb-3" id="ticket-title-type">*** 结算交易物理凭证 ***</div>
-<div class="border-b border-dashed border-slate-400 pb-1.5 space-y-0.5 text-[10px]">
-<p>流水单号: <span id="ticket-id"></span></p>
-<p>打印时间: <span id="ticket-time"></span></p>
-</div>
-<div class="py-2 border-b border-dashed border-slate-400">
-<div class="grid grid-cols-4 font-bold text-[10px] mb-1 text-slate-700">
-<span class="col-span-2">名称</span><span class="text-center">数</span><span class="text-right">总价</span>
-</div>
-<div class="space-y-1 text-[10px]" id="ticket-items"></div>
-</div>
+<div class="border-b border-dashed border-slate-400 pb-1.5 space-y-0.5 text-[10px]"><p>流水单号: <span id="ticket-id"></span></p><p>打印时间: <span id="ticket-time"></span></p><p>支付方式: <span id="ticket-payment"></span></p></div>
+<div class="py-2 border-b border-dashed border-slate-400"><div class="grid grid-cols-4 font-bold text-[10px] mb-1 text-slate-700"><span class="col-span-2">名称</span><span class="text-center">数</span><span class="text-right">总价</span></div><div class="space-y-1 text-[10px]" id="ticket-items"></div></div>
 <div class="py-2 font-bold text-right text-sm">合计应付: <span id="ticket-total">￥0.00</span></div>
 <div class="text-center text-[9px] text-slate-500 mt-3 border-t border-dashed border-slate-300 pt-2">谢谢惠顾，欢迎下次光临！</div>
 <button class="mt-4 w-full bg-slate-900 text-white font-bold py-1.5 rounded text-[10px] hover:bg-slate-800" onclick="closePrinterModal()">确认切纸 (关闭卷轴)</button>
 </div>
 </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<script src="assets/js/app.bundle.js"></script>
+<script src="assets/js/app.bundle.js?v=3.2.1"></script>
 </body>
 </html>
