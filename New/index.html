@@ -292,7 +292,7 @@ table tbody tr:hover { background-color: var(--accent-soft) !important; }
 <div class="fixed inset-0 bg-slate-950 z-[100] flex items-center justify-center p-4" id="login-modal">
 <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl max-w-sm w-full p-6">
 <div class="text-center mb-6"><div class="inline-flex w-12 h-12 rounded-full bg-orange-500/10 border border-orange-500/30 items-center justify-center mb-3"><i class="fa-solid fa-fingerprint text-orange-300 text-xl"></i></div><h2 class="text-xl font-black text-orange-300">第二引力销售系统</h2><p class="text-xs text-slate-400 mt-1">多用户安全登录</p></div>
-<form class="space-y-4" onsubmit="loginUser(event)"><div><label class="block text-xs text-slate-400 mb-1">账号</label><input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-orange-500" id="login-username" placeholder="请输入账号" required="" type="text"/></div><div><label class="block text-xs text-slate-400 mb-1">密码</label><input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-orange-500" id="login-password" placeholder="请输入密码" required="" type="password"/></div><button class="w-full bg-orange-500 hover:bg-orange-600 text-slate-950 font-black py-2.5 rounded-lg text-sm">登录系统</button></form>
+<form class="space-y-4" onsubmit="loginUser(event)"><div><label class="block text-xs text-slate-400 mb-1">账号</label><input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-orange-500" id="login-username" placeholder="请输入账号" required="" type="text"/></div><div><label class="block text-xs text-slate-400 mb-1">密码</label><input class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-orange-500" id="login-password" placeholder="请输入密码" required="" type="password"/></div><button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-slate-950 font-black py-2.5 rounded-lg text-sm">登录系统</button></form>
 <p class="hidden text-xs text-red-400 text-center mt-4" id="login-error"></p>
 </div>
 </div>
@@ -347,6 +347,6 @@ table tbody tr:hover { background-color: var(--accent-soft) !important; }
 <button class="mt-4 w-full bg-slate-900 text-white font-bold py-1.5 rounded text-[10px] hover:bg-slate-800" onclick="closePrinterModal()">确认切纸 (关闭卷轴)</button>
 </div>
 </div>
-<script src="assets/js/app.bundle.js"></script>
+<script src="assets/js/app.bundle.js?v=3.2.1"></script>
 </body>
 </html>
