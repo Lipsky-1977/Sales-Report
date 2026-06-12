@@ -1,0 +1,22 @@
+{
+  "name": "第二引力销售系统 V3",
+  "short_name": "第二引力V3",
+  "description": "移动优先、离线可用、扫码收银、库存管理、报表分析和多用户管理的销售系统。",
+  "id": "./index.html?v=3",
+  "start_url": "./index.html?v=3",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#09090b",
+  "theme_color": "#f97316",
+  "categories": ["business", "productivity", "shopping"],
+  "icons": [
+    { "src": "icon-192.svg", "sizes": "192x192", "type": "image/svg+xml", "purpose": "any maskable" },
+    { "src": "icon-512.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    { "name": "开始收银", "short_name": "收银", "url": "./index.html?v=3#sales", "description": "打开扫码与购物车收银界面" },
+    { "name": "查看报表", "short_name": "报表", "url": "./index.html?v=3#report", "description": "打开销售报表与排行" }
+  ]
+}
