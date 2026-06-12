@@ -1,4 +1,4 @@
-const APP_VERSION = '3.2.1';
+const APP_VERSION = '3.3.0';
 const CACHE_NAME = `second-gravity-sales-v${APP_VERSION}`;
 const CORE_ASSETS = [
   './',

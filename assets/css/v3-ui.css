@@ -46,9 +46,10 @@ header {
   border-bottom: 1px solid var(--v3-line) !important;
   background: rgba(12,12,14,.76) !important;
   backdrop-filter: blur(20px) saturate(1.2) !important;
+}
+
 main > section:hover, .tab-content > div:hover {
   border-color: rgba(168,85,247,.24) !important;
-}
 }
 
 main > section, .tab-content > div, form, .rounded-xl, .rounded-lg {
